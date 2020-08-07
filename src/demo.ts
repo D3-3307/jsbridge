@@ -6,6 +6,6 @@ class JSBridgeDemo extends JSBridgeBase {
   }
 
   public demoAPI() {
-    return this.handlePublicAPI('DemoActionID');
+    return this.handlePublicAPI('stats');
   }
 }
