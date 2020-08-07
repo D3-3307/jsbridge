@@ -1,6 +1,6 @@
 {
   "name": "statsjsbridge",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "jsbridge for test",
   "author": "LiuuY",
   "license": "MIT",
@@ -12,7 +12,7 @@
   },
   "browserslist": "> 0.25%, not dead",
   "devDependencies": {
-    "@babel/core": "^7.3.4", 
+    "@babel/core": "^7.3.4",
     "@babel/preset-env": "^7.3.4",
     "@babel/preset-typescript": "^7.3.3",
     "@types/jest": "^24.0.11",
