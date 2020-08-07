@@ -116,13 +116,29 @@ var JSBridgeBase = /** @class */ (function () {
     return JSBridgeBase;
 }());
 
+// interface Stats {
+//   fps: number;
+//   white: number;
+//   onload: number;
+// }
 var JSBridge = /** @class */ (function (_super) {
     __extends(JSBridge, _super);
     function JSBridge() {
         return _super.call(this) || this;
     }
-    JSBridge.prototype.sendStats = function (stats) {
-        return this.handlePublicAPI('stats', stats);
+    JSBridge.prototype.sendStats = function () {
+        var performance = window.performance || window.webkitPerformance;
+        if (performance === undefined) {
+            console.warn('can not get performance stats');
+            return;
+        }
+        var timing = performance.timing;
+        var data = {
+            fps: 0,
+            white: timing.responseStart - timing.navigationStart,
+            onload: timing.loadEventEnd - timing.loadEventStart
+        };
+        return this.handlePublicAPI('stats', data);
     };
     return JSBridge;
 }(JSBridgeBase));

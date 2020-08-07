@@ -4,6 +4,7 @@ declare global {
     webkit: any;
     __NativeCallback: any;
     callWeb: any;
+    webkitPerformance: any;
   }
 }
 
