@@ -1,15 +1,12 @@
 import JSBridgeBase from './base';
-
-// interface Stats {
-//   fps: number;
-//   white: number;
-//   onload: number;
-// }
+import { FPS } from './fps';
 
 export default class JSBridge extends JSBridgeBase {
   constructor() {
     super();
   }
+
+  private fpsReqId = 0;
 
   public sendStats() {
     const performance = window.performance || window.webkitPerformance;
@@ -24,9 +21,27 @@ export default class JSBridge extends JSBridgeBase {
     const data = {
       fps: 0,
       white: timing.responseStart - timing.navigationStart,
-      onload: timing.loadEventEnd - timing.loadEventStart
-    }
+      onload: timing.loadEventEnd - timing.fetchStart
+    };
 
     return this.handlePublicAPI('stats', data);
+  }
+
+  public fps(start: boolean = true) {
+    if (!start) {
+      cancelAnimationFrame(this.fpsReqId);
+      return;
+    }
+
+    const fps = new FPS(120);
+
+    function loop() {
+      let fpsValue = fps.tick();
+      console.log(fpsValue);
+      this.handlePublicAPI('fps', { fps: fpsValue });
+      this.fpsReqId = requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
   }
 }

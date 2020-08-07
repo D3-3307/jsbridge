@@ -33,6 +33,14 @@ var isIOS = function () { return !!ua.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); };
 var NATIVE_CALLBACK = '__NativeCallback';
 var CALL_NATIVE = '__CallNative';
 var MSG_PREFIX = '[JSBridge]';
+var print = function (msg) {
+    try {
+        console.log("%c " + MSG_PREFIX + ":\n", 'color: #D7BB71', JSON.stringify(msg, null, 4));
+    }
+    catch (error) {
+        console.warn(MSG_PREFIX + ": print error:", error);
+    }
+};
 var uuid = function () {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         var r = (Math.random() * 16) | 0, v = c == 'x' ? r : (r & 0x3) | 0x8;
@@ -47,6 +55,7 @@ var randomCallbackID = function (actionID) {
 };
 var JSBridgeBase = /** @class */ (function () {
     function JSBridgeBase() {
+        this.devMode = false;
         if (!!this.cachedPromise) {
             JSBridgeError('Already loaded');
         }
@@ -55,6 +64,9 @@ var JSBridgeBase = /** @class */ (function () {
         }
         this.nativeCallbackHandler();
     }
+    JSBridgeBase.prototype.toggleDevMode = function () {
+        return (this.devMode = !this.devMode);
+    };
     JSBridgeBase.prototype.callNative = function (toNativeData) {
         if (isAndroid()) {
             if (!window.android) {
@@ -82,6 +94,9 @@ var JSBridgeBase = /** @class */ (function () {
         window[NATIVE_CALLBACK] = function (dataString) {
             try {
                 var data = JSON.parse(dataString);
+                if (_this.devMode) {
+                    print(data);
+                }
                 if (_this.cachedPromise.has(data.callbackID)) {
                     var correspondingHandler = _this.cachedPromise.get(data.callbackID);
                     if (data.error) {
@@ -104,6 +119,9 @@ var JSBridgeBase = /** @class */ (function () {
     JSBridgeBase.prototype.handlePublicAPI = function (actionID, params) {
         var _this = this;
         var callbackID = randomCallbackID(actionID);
+        if (this.devMode) {
+            print({ actionID: actionID, params: params });
+        }
         return new Promise(function (resolve, reject) {
             _this.cachedPromise.set(callbackID, { resolve: resolve, reject: reject });
             _this.callNative({
@@ -116,15 +134,58 @@ var JSBridgeBase = /** @class */ (function () {
     return JSBridgeBase;
 }());
 
-// interface Stats {
-//   fps: number;
-//   white: number;
-//   onload: number;
-// }
+var FPS = /** @class */ (function () {
+    function FPS(sampleSize) {
+        if (sampleSize === void 0) { sampleSize = 60; }
+        this.sampleSize = 60;
+        this.value = 0;
+        this.sample = [];
+        this.index = 0;
+        this.lastTick = -1;
+        this.perf = window.performance || window.webkitPerformance;
+        this.sampleSize = sampleSize;
+    }
+    FPS.prototype.tick = function () {
+        if (this.perf === undefined) {
+            return 0;
+        }
+        // if is first tick, just set tick timestamp and return
+        if (this.lastTick === -1) {
+            this.lastTick = this.perf.now();
+            return 0;
+        }
+        // calculate necessary values to obtain current tick FPS
+        var now = this.perf.now();
+        var delta = (now - this.lastTick) / 1000;
+        var fps = 1 / delta;
+        // add to fps samples, current tick fps value
+        this.sample[this.index] = Math.round(fps);
+        // iterate samples to obtain the average
+        var average = 0;
+        for (var i = 0; i < this.sample.length; i++) {
+            average += this.sample[i];
+        }
+        average = Math.round(average / this.sample.length);
+        // set new FPS
+        this.value = average;
+        // store current timestamp
+        this.lastTick = now;
+        // increase sample index counter, and reset it
+        // to 0 if exceded maximum sampleSize limit
+        this.index++;
+        if (this.index === this.sampleSize)
+            this.index = 0;
+        return this.value;
+    };
+    return FPS;
+}());
+
 var JSBridge = /** @class */ (function (_super) {
     __extends(JSBridge, _super);
     function JSBridge() {
-        return _super.call(this) || this;
+        var _this = _super.call(this) || this;
+        _this.fpsReqId = 0;
+        return _this;
     }
     JSBridge.prototype.sendStats = function () {
         var performance = window.performance || window.webkitPerformance;
@@ -136,9 +197,24 @@ var JSBridge = /** @class */ (function (_super) {
         var data = {
             fps: 0,
             white: timing.responseStart - timing.navigationStart,
-            onload: timing.loadEventEnd - timing.loadEventStart
+            onload: timing.loadEventEnd - timing.fetchStart
         };
         return this.handlePublicAPI('stats', data);
+    };
+    JSBridge.prototype.fps = function (start) {
+        if (start === void 0) { start = true; }
+        if (!start) {
+            cancelAnimationFrame(this.fpsReqId);
+            return;
+        }
+        var fps = new FPS(120);
+        function loop() {
+            var fpsValue = fps.tick();
+            console.log(fpsValue);
+            this.handlePublicAPI('fps', { fps: fpsValue });
+            this.fpsReqId = requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
     };
     return JSBridge;
 }(JSBridgeBase));
