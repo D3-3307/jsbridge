@@ -143,4 +143,4 @@ var JSBridge = /** @class */ (function (_super) {
     return JSBridge;
 }(JSBridgeBase));
 
-export { JSBridge };
+export default JSBridge;

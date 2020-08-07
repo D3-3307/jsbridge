@@ -1,9 +1,5 @@
-import { ACTIONID } from './types';
-declare class JSBridgeBase {
+import JSBridgeBase from './base';
+export default class JSBridge extends JSBridgeBase {
     constructor();
-    private cachedPromise;
-    private callNative;
-    private nativeCallbackHandler;
-    protected handlePublicAPI<T, K>(actionID: ACTIONID, params?: T): Promise<K>;
+    sendStats(): Promise<unknown>;
 }
-export default JSBridgeBase;
