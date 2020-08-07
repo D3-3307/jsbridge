@@ -15,6 +15,14 @@ const CALL_NATIVE = '__CallNative';
 
 const MSG_PREFIX = '[JSBridge]';
 
+const print = <T>(msg: T) => {
+  try {
+    console.log(`%c ${MSG_PREFIX}:\n`, 'color: #D7BB71', JSON.stringify(msg, null, 4));
+  } catch (error) {
+    console.warn(`${MSG_PREFIX}: print error:`, error);
+  }
+};
+
 const uuid = () =>
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = (Math.random() * 16) | 0,
@@ -40,6 +48,12 @@ class JSBridgeBase {
 
     this.nativeCallbackHandler();
   }
+
+  public toggleDevMode() {
+    return (this.devMode = !this.devMode);
+  }
+
+  private devMode = false;
 
   private cachedPromise: Map<CACHED_INDEX, CACHED_PROMISE>;
 
@@ -73,6 +87,10 @@ class JSBridgeBase {
       try {
         const data = JSON.parse(dataString) as NATIVE_CALLBACK;
 
+        if (this.devMode) {
+          print<object>(data);
+        }
+
         if (this.cachedPromise.has(data.callbackID)) {
           const correspondingHandler = this.cachedPromise.get(data.callbackID);
 
@@ -94,6 +112,10 @@ class JSBridgeBase {
 
   protected handlePublicAPI<T, K>(actionID: ACTIONID, params?: T): Promise<K> {
     const callbackID = randomCallbackID(actionID);
+
+    if (this.devMode) {
+      print<any>({ actionID, params });
+    }
 
     return new Promise((resolve, reject) => {
       this.cachedPromise.set(callbackID, { resolve, reject });
