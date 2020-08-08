@@ -4,7 +4,8 @@
   "description": "jsbridge for test",
   "author": "LiuuY",
   "license": "MIT",
-  "main": "build/main.js",
+  "main": "build/umd/main.js",
+  "module": "build/esm/main.js",
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c --watch",

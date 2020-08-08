@@ -55,7 +55,14 @@ var randomCallbackID = function (actionID) {
 };
 var JSBridgeBase = /** @class */ (function () {
     function JSBridgeBase() {
+        var _this = this;
+        this.mock = function (mockResponse) {
+            _this.mockResponse = mockResponse;
+            _this.mockMode = true;
+            return _this;
+        };
         this.devMode = false;
+        this.mockMode = false;
         if (!!this.cachedPromise) {
             JSBridgeError('Already loaded');
         }
@@ -68,6 +75,16 @@ var JSBridgeBase = /** @class */ (function () {
         return (this.devMode = !this.devMode);
     };
     JSBridgeBase.prototype.callNative = function (toNativeData) {
+        if (this.mockMode) {
+            window[NATIVE_CALLBACK](JSON.stringify({
+                actionID: toNativeData.actionID,
+                callbackID: toNativeData.callbackID,
+                data: this.mockResponse
+            }));
+            this.mockMode = false;
+            this.mockResponse = null;
+            return;
+        }
         if (isAndroid()) {
             if (!window.android) {
                 JSBridgeError('No window.android, please be sure your H5 is in APP WebView');
@@ -220,3 +237,4 @@ var JSBridge = /** @class */ (function (_super) {
 }(JSBridgeBase));
 
 export default JSBridge;
+//# sourceMappingURL=main.js.map
