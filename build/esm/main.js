@@ -219,18 +219,19 @@ var JSBridge = /** @class */ (function (_super) {
         return this.handlePublicAPI('stats', data);
     };
     JSBridge.prototype.fps = function (start) {
+        var _this = this;
         if (start === void 0) { start = true; }
         if (!start) {
             cancelAnimationFrame(this.fpsReqId);
             return;
         }
         var fps = new FPS(120);
-        function loop() {
+        var loop = function () {
             var fpsValue = fps.tick();
             console.log(fpsValue);
-            this.handlePublicAPI('fps', { fps: fpsValue });
-            this.fpsReqId = requestAnimationFrame(loop);
-        }
+            _this.handlePublicAPI('fps', { fps: fpsValue });
+            _this.fpsReqId = requestAnimationFrame(loop);
+        };
         requestAnimationFrame(loop);
     };
     return JSBridge;
