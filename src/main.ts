@@ -35,12 +35,12 @@ export default class JSBridge extends JSBridgeBase {
 
     const fps = new FPS(120);
 
-    function loop() {
+    const loop = () => {
       let fpsValue = fps.tick();
       console.log(fpsValue);
       this.handlePublicAPI('fps', { fps: fpsValue });
       this.fpsReqId = requestAnimationFrame(loop);
-    }
+    };
 
     requestAnimationFrame(loop);
   }
