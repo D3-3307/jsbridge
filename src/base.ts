@@ -1,10 +1,4 @@
-import {
-  ACTIONID,
-  CACHED_INDEX,
-  CACHED_PROMISE,
-  CALL_NATIVE,
-  NATIVE_CALLBACK
-} from './types';
+import { ACTIONID, CACHED_INDEX, CACHED_PROMISE, CALL_NATIVE, NATIVE_CALLBACK } from './types';
 
 const ua = window.navigator.userAgent;
 const isAndroid = () => ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1;
@@ -53,24 +47,44 @@ class JSBridgeBase {
     return (this.devMode = !this.devMode);
   }
 
+  public mock = (mockResponse: any) => {
+    this.mockResponse = mockResponse;
+    this.mockMode = true;
+    return this;
+  };
+
   private devMode = false;
+
+  private mockMode = false;
+  private mockResponse: any;
 
   private cachedPromise: Map<CACHED_INDEX, CACHED_PROMISE>;
 
   private callNative(toNativeData: CALL_NATIVE) {
+    if (this.mockMode) {
+      window[NATIVE_CALLBACK](
+        JSON.stringify({
+          actionID: toNativeData.actionID,
+          callbackID: toNativeData.callbackID,
+          data: this.mockResponse
+        })
+      );
+
+      this.mockMode = false;
+      this.mockResponse = null;
+
+      return;
+    }
+
     if (isAndroid()) {
       if (!window.android) {
-        JSBridgeError(
-          'No window.android, please be sure your H5 is in APP WebView'
-        );
+        JSBridgeError('No window.android, please be sure your H5 is in APP WebView');
       } else {
         window.android[CALL_NATIVE](JSON.stringify(toNativeData));
       }
     } else if (isIOS()) {
       if (!window.webkit) {
-        JSBridgeError(
-          'No window.webkit, please be sure your H5 is in APP WebView'
-        );
+        JSBridgeError('No window.webkit, please be sure your H5 is in APP WebView');
       } else {
         window.webkit.messageHandlers[CALL_NATIVE].postMessage(toNativeData);
       }
