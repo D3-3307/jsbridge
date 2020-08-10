@@ -1,5 +1,4 @@
 import JSBridgeBase from './base';
-import { FPS } from './fps';
 
 export default class JSBridge extends JSBridgeBase {
   constructor() {
@@ -33,15 +32,24 @@ export default class JSBridge extends JSBridgeBase {
       return;
     }
 
-    const fps = new FPS(120);
+    const performance = window.performance || window.webkitPerformance || Date;
+    let prevTime = performance.now();
+    let frames = 0;
 
     const loop = () => {
-      let fpsValue = fps.tick();
-      console.log(fpsValue);
-      this.handlePublicAPI('fps', { fps: fpsValue });
+      const time = performance.now();
+      frames++;
+      if (time > prevTime + 1000) {
+        let fps = Math.round((frames * 1000) / (time - prevTime));
+        prevTime = time;
+        frames = 0;
+
+        this.handlePublicAPI('fps', { fps });
+      }
+
       this.fpsReqId = requestAnimationFrame(loop);
     };
 
-    requestAnimationFrame(loop);
+    this.fpsReqId = requestAnimationFrame(loop);
   }
 }
