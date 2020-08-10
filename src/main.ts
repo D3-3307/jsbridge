@@ -1,5 +1,5 @@
 import JSBridgeBase from './base';
-import { getStats } from './performance';
+import { getStats } from './timing';
 
 export default class JSBridge extends JSBridgeBase {
   constructor() {
@@ -9,7 +9,7 @@ export default class JSBridge extends JSBridgeBase {
   private fpsReqId = 0;
 
   public sendStats() {
-    return this.handlePublicAPI('stats', { ...getStats() });
+    return this.handlePublicAPI('stats', getStats());
   }
 
   public fps(start: boolean = true) {
