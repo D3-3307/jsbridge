@@ -151,52 +151,6 @@ var JSBridgeBase = /** @class */ (function () {
     return JSBridgeBase;
 }());
 
-var FPS = /** @class */ (function () {
-    function FPS(sampleSize) {
-        if (sampleSize === void 0) { sampleSize = 60; }
-        this.sampleSize = 60;
-        this.value = 0;
-        this.sample = [];
-        this.index = 0;
-        this.lastTick = -1;
-        this.perf = window.performance || window.webkitPerformance;
-        this.sampleSize = sampleSize;
-    }
-    FPS.prototype.tick = function () {
-        if (this.perf === undefined) {
-            return 0;
-        }
-        // if is first tick, just set tick timestamp and return
-        if (this.lastTick === -1) {
-            this.lastTick = this.perf.now();
-            return 0;
-        }
-        // calculate necessary values to obtain current tick FPS
-        var now = this.perf.now();
-        var delta = (now - this.lastTick) / 1000;
-        var fps = 1 / delta;
-        // add to fps samples, current tick fps value
-        this.sample[this.index] = Math.round(fps);
-        // iterate samples to obtain the average
-        var average = 0;
-        for (var i = 0; i < this.sample.length; i++) {
-            average += this.sample[i];
-        }
-        average = Math.round(average / this.sample.length);
-        // set new FPS
-        this.value = average;
-        // store current timestamp
-        this.lastTick = now;
-        // increase sample index counter, and reset it
-        // to 0 if exceded maximum sampleSize limit
-        this.index++;
-        if (this.index === this.sampleSize)
-            this.index = 0;
-        return this.value;
-    };
-    return FPS;
-}());
-
 var JSBridge = /** @class */ (function (_super) {
     __extends(JSBridge, _super);
     function JSBridge() {
@@ -225,14 +179,21 @@ var JSBridge = /** @class */ (function (_super) {
             cancelAnimationFrame(this.fpsReqId);
             return;
         }
-        var fps = new FPS(120);
+        var performance = window.performance || window.webkitPerformance || Date;
+        var prevTime = performance.now();
+        var frames = 0;
         var loop = function () {
-            var fpsValue = fps.tick();
-            console.log(fpsValue);
-            _this.handlePublicAPI('fps', { fps: fpsValue });
+            var time = performance.now();
+            frames++;
+            if (time > prevTime + 1000) {
+                var fps = Math.round((frames * 1000) / (time - prevTime));
+                prevTime = time;
+                frames = 0;
+                _this.handlePublicAPI('fps', { fps: fps });
+            }
             _this.fpsReqId = requestAnimationFrame(loop);
         };
-        requestAnimationFrame(loop);
+        this.fpsReqId = requestAnimationFrame(loop);
     };
     return JSBridge;
 }(JSBridgeBase));
