@@ -1,4 +1,5 @@
 import JSBridgeBase from './base';
+import { getStats } from './performance';
 
 export default class JSBridge extends JSBridgeBase {
   constructor() {
@@ -8,22 +9,7 @@ export default class JSBridge extends JSBridgeBase {
   private fpsReqId = 0;
 
   public sendStats() {
-    const performance = window.performance || window.webkitPerformance;
-
-    if (performance === undefined) {
-      console.warn('can not get performance stats');
-      return;
-    }
-
-    const timing = performance.timing;
-
-    const data = {
-      fps: 0,
-      white: timing.responseStart - timing.navigationStart,
-      onload: timing.loadEventEnd - timing.fetchStart
-    };
-
-    return this.handlePublicAPI('stats', data);
+    return this.handlePublicAPI('stats', { ...getStats() });
   }
 
   public fps(start: boolean = true) {
