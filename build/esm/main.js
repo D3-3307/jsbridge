@@ -27,6 +27,17 @@ function __extends(d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
 
+var __assign = function() {
+    __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+
 var ua = window.navigator.userAgent;
 var isAndroid = function () { return ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1; };
 var isIOS = function () { return !!ua.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); };
@@ -151,6 +162,64 @@ var JSBridgeBase = /** @class */ (function () {
     return JSBridgeBase;
 }());
 
+function getStats() {
+    var performance = window.performance || window.webkitPerformance;
+    var initStats = {
+        appcacheTime: 0,
+        connectTime: 0,
+        domReadyTime: 0,
+        firstPaintTime: 0,
+        initDomTreeTime: 0,
+        loadEventTime: 0,
+        loadTime: 0,
+        lookupDomainTime: 0,
+        readyStart: 0,
+        redirectTime: 0,
+        requestTime: 0,
+        unloadEventTime: 0
+    };
+    if (performance === undefined) {
+        return initStats;
+    }
+    var timing = performance.timing;
+    var api = initStats;
+    if (timing) {
+        // Time to first paint
+        if (api.firstPaintTime === 0) {
+            if (performance.getEntriesByName !== undefined) {
+                var firstPaintPerformanceEntry = performance.getEntriesByName('first-paint');
+                if (firstPaintPerformanceEntry.length === 1) {
+                    var firstPaintTime = firstPaintPerformanceEntry[0].startTime;
+                    api.firstPaintTime = firstPaintTime;
+                }
+            }
+        }
+        // Total time from start to load
+        api.loadTime = timing.loadEventEnd - timing.fetchStart;
+        // Time spent constructing the DOM tree
+        api.domReadyTime = timing.domComplete - timing.domInteractive;
+        // Time consumed preparing the new page
+        api.readyStart = timing.fetchStart - timing.navigationStart;
+        // Time spent during redirection
+        api.redirectTime = timing.redirectEnd - timing.redirectStart;
+        // AppCache
+        api.appcacheTime = timing.domainLookupStart - timing.fetchStart;
+        // Time spent unloading documents
+        api.unloadEventTime = timing.unloadEventEnd - timing.unloadEventStart;
+        // DNS query time
+        api.lookupDomainTime = timing.domainLookupEnd - timing.domainLookupStart;
+        // TCP connection time
+        api.connectTime = timing.connectEnd - timing.connectStart;
+        // Time spent during the request
+        api.requestTime = timing.responseEnd - timing.requestStart;
+        // Request to completion of the DOM loading
+        api.initDomTreeTime = timing.domInteractive - timing.responseEnd;
+        // Load event time
+        api.loadEventTime = timing.loadEventEnd - timing.loadEventStart;
+    }
+    return api;
+}
+
 var JSBridge = /** @class */ (function (_super) {
     __extends(JSBridge, _super);
     function JSBridge() {
@@ -159,18 +228,7 @@ var JSBridge = /** @class */ (function (_super) {
         return _this;
     }
     JSBridge.prototype.sendStats = function () {
-        var performance = window.performance || window.webkitPerformance;
-        if (performance === undefined) {
-            console.warn('can not get performance stats');
-            return;
-        }
-        var timing = performance.timing;
-        var data = {
-            fps: 0,
-            white: timing.responseStart - timing.navigationStart,
-            onload: timing.loadEventEnd - timing.fetchStart
-        };
-        return this.handlePublicAPI('stats', data);
+        return this.handlePublicAPI('stats', __assign({}, getStats()));
     };
     JSBridge.prototype.fps = function (start) {
         var _this = this;
