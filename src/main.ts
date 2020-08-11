@@ -8,7 +8,7 @@ export default class JSBridge extends JSBridgeBase {
 
   private fpsReqId = 0;
 
-  public sendStats() {
+  public stats() {
     return this.handlePublicAPI('stats', getStats());
   }
 
@@ -37,5 +37,11 @@ export default class JSBridge extends JSBridgeBase {
     };
 
     this.fpsReqId = requestAnimationFrame(loop);
+  }
+
+  public error() {
+    window.addEventListener('error', e => {
+      this.handlePublicAPI('error', { error: e });
+    });
   }
 }
