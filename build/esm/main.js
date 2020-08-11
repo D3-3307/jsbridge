@@ -214,6 +214,7 @@ var JSBridge = /** @class */ (function (_super) {
     function JSBridge() {
         var _this = _super.call(this) || this;
         _this.fpsReqId = 0;
+        _this.traceError();
         return _this;
     }
     JSBridge.prototype.stats = function () {
@@ -242,10 +243,10 @@ var JSBridge = /** @class */ (function (_super) {
         };
         this.fpsReqId = requestAnimationFrame(loop);
     };
-    JSBridge.prototype.error = function () {
+    JSBridge.prototype.traceError = function () {
         var _this = this;
         window.addEventListener('error', function (e) {
-            _this.handlePublicAPI('error', { error: e });
+            _this.handlePublicAPI('error', { message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno });
         });
     };
     return JSBridge;

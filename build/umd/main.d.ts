@@ -4,5 +4,5 @@ export default class JSBridge extends JSBridgeBase {
     private fpsReqId;
     stats(): Promise<unknown>;
     fps(start?: boolean): void;
-    error(): void;
+    traceError(): void;
 }

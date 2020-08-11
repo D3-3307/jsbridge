@@ -4,6 +4,8 @@ import { getStats } from './timing';
 export default class JSBridge extends JSBridgeBase {
   constructor() {
     super();
+
+    this.traceError();
   }
 
   private fpsReqId = 0;
@@ -39,9 +41,9 @@ export default class JSBridge extends JSBridgeBase {
     this.fpsReqId = requestAnimationFrame(loop);
   }
 
-  public error() {
-    window.addEventListener('error', e => {
-      this.handlePublicAPI('error', { error: e });
+  public traceError() {
+    window.addEventListener('error', (e: ErrorEvent) => {
+      this.handlePublicAPI('error', { message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno });
     });
   }
 }
